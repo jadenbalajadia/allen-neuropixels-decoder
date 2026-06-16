@@ -5,7 +5,7 @@ Raw electrophysiology data is not tracked in this repo (files are too large for 
 ## Pre-extracted arrays
 
 The processed `.npy` arrays used in the notebooks are available via Google Drive:
-[Google Drive folder](YOUR_DRIVE_LINK)
+[Google Drive folder](https://drive.google.com/drive/folders/1RAW7LVEXndBrboPt53YSQgfGjjS9JFeQ?usp=drive_link)
 
 Place downloaded files in this `data/` directory before running notebooks locally.
 
