@@ -2,7 +2,7 @@
 
 Decoding lick behavior from multi-region population spike trains recorded with Neuropixels probes in the Allen Brain Observatory. Extracts single-unit activity from 745 neurons across 21 brain areas, constructs a low-dimensional PCA manifold of population dynamics, and visualizes pre-lick neural trajectories in PC-space.
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/YOUR_USERNAME/allen-neuropixels-decoder/blob/main/colab/run_pipeline.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jadenbalajadia/allen-neuropixels-decoder/blob/main/notebooks/04_decoding.ipynb)
 ![Python](https://img.shields.io/badge/python-3.9+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -34,9 +34,8 @@ flowchart LR
 | Session | 1044385384 |
 | Units analyzed | 745 |
 | Brain regions | 21 (CA1, VISpm, VISl, POL, DG, VISrl, LP, MRN, TH, VISal, and more) |
-| Decoder accuracy (test set) | [XX% — add after running 04_decoding] |
-| AUC-ROC | [X.XX — add after running 04_decoding] |
-| Chance level | ~50% |
+| AUC-ROC | 0.921 |
+| Chance level (AUC) | 0.5 |
 
 ---
 
@@ -60,22 +59,21 @@ flowchart LR
 
 ## Results
 
-### Population dynamics (PCA manifold)
+### Decoder performance (ROC curve)
 
-<!-- After generating figures, add them here: -->
-<!-- ![PCA Trajectory](figures/pca_trajectory_2d.png) -->
+![ROC Curve](figures/roc_curve.png)
+
+*Mean ROC curve across 5 stratified folds. AUC = 0.921 — well above the 0.5 chance baseline. Because lick events represent ~5% of time bins, AUC-ROC is reported as the primary metric; raw accuracy is misleading under this class imbalance.*
+
+### Population dynamics (PCA manifold)
 
 *2D projection of 745-neuron population activity into PC1–PC2 space, colored by lick label. Lick (y=1) and no-lick (y=0) trials occupy distinct regions of the manifold.*
 
 ### Pre-lick trajectories
 
-<!-- ![Pre-lick Trajectories](figures/prelick_trajectories.png) -->
-
 *40-bin (400 ms) neural trajectories immediately preceding each lick event (first 100 licks shown). Convergence toward a common endpoint in PC-space suggests a consistent pre-motor neural signature.*
 
 ### Brain region distribution
-
-<!-- ![Region Bar Chart](figures/region_counts.png) -->
 
 *Number of filtered units per brain area. CA1 contributes the most units (151), with strong representation across visual cortex (VISpm, VISl, VISrl, VISal) and hippocampal formation.*
 
@@ -91,8 +89,6 @@ allen-neuropixels-decoder/
 ├── data/
 │   └── README.md                              # download instructions
 ├── notebooks/
-│   ├── 01_data_exploration.ipynb              # load session, inspect spike trains
-│   ├── 02_spike_extraction.ipynb              # unit filtering, binning, smoothing
 │   ├── 03_pca_manifold.ipynb                  # PCA, 2D/3D trajectory visualization
 │   └── 04_decoding.ipynb                      # logistic regression, cross-val, ROC
 ├── src/
@@ -100,9 +96,7 @@ allen-neuropixels-decoder/
 │   ├── preprocessing.py                       # spike binning, smoothing, AllenSDK helpers
 │   ├── manifold.py                            # PCA wrapper + trajectory plotting
 │   └── decoder.py                             # logistic regression, cross-val, ROC
-├── figures/                                   # saved output figures
-└── colab/
-    └── run_pipeline.ipynb                     # self-contained Colab demo (loads from Drive)
+└── figures/                                   # saved output figures
 ```
 
 ---
@@ -111,7 +105,7 @@ allen-neuropixels-decoder/
 
 **Local:**
 ```bash
-git clone https://github.com/YOUR_USERNAME/allen-neuropixels-decoder.git
+git clone https://github.com/jadenbalajadia/allen-neuropixels-decoder.git
 cd allen-neuropixels-decoder
 conda env create -f environment.yml
 conda activate allen-decoder
@@ -119,7 +113,7 @@ jupyter lab
 ```
 
 **Colab (no install):**
-Click the "Open in Colab" badge above. The notebook mounts a shared Google Drive folder at `/content/drive/MyDrive/lickingpcaoutputs` containing the pre-extracted `.npy` arrays — AllenSDK download not required.
+Click the "Open in Colab" badge above. The notebook mounts a shared Google Drive folder containing the pre-extracted `.npy` arrays — AllenSDK download not required.
 
 ---
 
@@ -134,7 +128,7 @@ cache = EcephysProjectCache.from_warehouse(manifest=manifest_path)
 session = cache.get_session_data(1044385384)
 ```
 
-Pre-extracted arrays are available in the shared [Google Drive folder](YOUR_DRIVE_LINK):
+Pre-extracted arrays are available in the shared [Google Drive folder](https://drive.google.com/drive/folders/1RAW7LVEXndBrboPt53YSQgfGjjS9JFeQ?usp=drive_link):
 
 | File | Description | Shape |
 |---|---|---|
@@ -152,10 +146,8 @@ See `data/README.md` for full download instructions.
 
 | Notebook | What it does |
 |---|---|
-| `01_data_exploration` | Load session, inspect spike trains, visualize rasters, check unit quality metrics |
-| `02_spike_extraction` | Filter 745 units, bin spikes (10 ms), apply Gaussian smoothing |
 | `03_pca_manifold` | PCA on 745×T population matrix; 2D/3D trajectory visualization; pre-lick trajectory overlays |
-| `04_decoding` | Logistic regression on PCA-reduced activity; k-fold cross-validation; ROC curve |
+| `04_decoding` | Logistic regression on PCA-reduced activity; k-fold cross-validation; ROC curve (AUC = 0.921) |
 
 ---
 
@@ -167,7 +159,7 @@ See `data/README.md` for full download instructions.
 
 **Dimensionality reduction.** PCA was applied to the population firing rate matrix. The top 3 principal components were retained for visualization. Pre-lick trajectories were extracted by taking 40-bin (400 ms) windows immediately preceding each lick event.
 
-**Decoding.** A logistic regression classifier was trained on PCA-reduced activity to distinguish lick from no-lick time bins. Performance was evaluated using k-fold cross-validation; chance level is ~50%.
+**Decoding.** A logistic regression classifier was trained on PCA-reduced activity to distinguish lick from no-lick time bins. Performance was evaluated using 5-fold stratified cross-validation. Because lick events represent ~5% of time bins, balanced accuracy and AUC-ROC are reported as primary metrics.
 
 ---
 
@@ -194,6 +186,6 @@ Data provided by the [Allen Brain Observatory](https://observatory.brain-map.org
   author = {Balajadia, Jaden},
   title  = {Allen Neuropixels Lick Decoder},
   year   = {2025},
-  url    = {https://github.com/YOUR_USERNAME/allen-neuropixels-decoder}
+  url    = {https://github.com/jadenbalajadia/allen-neuropixels-decoder}
 }
 ```
