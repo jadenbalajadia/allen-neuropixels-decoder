@@ -65,6 +65,12 @@ flowchart LR
 
 *Mean ROC curve across 5 stratified folds. AUC = 0.921 — well above the 0.5 chance baseline. Because lick events represent ~5% of time bins, AUC-ROC is reported as the primary metric; raw accuracy is misleading under this class imbalance.*
 
+### Corrected CV (leakage fix)
+
+![ROC Curve — Corrected](figures/roc_corrected.png)
+
+Cross-validated lick decoding AUC: 0.955 ± 0.003 (5-fold, logistic regression on PCA-reduced spike rates, 1,153 QC-passed units). Smoothing and dimensionality reduction are fit within each training fold only, avoiding the leakage present in an earlier version of this pipeline.
+
 ### Population dynamics (PCA manifold)
 
 *2D projection of 745-neuron population activity into PC1–PC2 space, colored by lick label. Lick (y=1) and no-lick (y=0) trials occupy distinct regions of the manifold.*
