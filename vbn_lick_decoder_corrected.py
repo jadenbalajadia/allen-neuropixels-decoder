@@ -188,12 +188,63 @@ for fold, (train_idx, test_idx) in enumerate(kf.split(X_raw, y)):
     print(f"  Fold {fold + 1}:  AUC = {auc:.4f}  "
           f"(train n={len(train_idx):,}  test n={len(test_idx):,})")
 
-mean_auc = np.mean(aucs)
-std_auc  = np.std(aucs)
+mean_auc_shuffled = np.mean(aucs)
+std_auc_shuffled  = np.std(aucs)
 
 print(f"\n{'─'*45}")
-print(f"  Corrected AUC:  {mean_auc:.4f} ± {std_auc:.4f}")
+print(f"  Shuffled k-fold AUC:  {mean_auc_shuffled:.4f} ± {std_auc_shuffled:.4f}")
 print(f"{'─'*45}")
+
+## ── 7. Blocked (contiguous-time) CV ─────────────────────────────────────
+# StratifiedKFold(shuffle=True) scatters individual 50 ms bins randomly.
+# Neighboring bins are highly correlated at 20 Hz, so even leakage-free
+# preprocessing can let a test bin be near-duplicated by a training bin
+# just milliseconds away — slightly inflating AUC.
+# Blocked CV splits the session into contiguous time chunks instead,
+# giving genuinely independent train/test windows.
+print(f"\nRunning {N_SPLITS}-fold blocked (contiguous-time) CV...\n")
+
+n_bins_total = len(y)
+fold_bounds  = np.linspace(0, n_bins_total, N_SPLITS + 1, dtype=int)
+aucs_blocked = []
+
+for i in range(N_SPLITS):
+    test_start, test_end = fold_bounds[i], fold_bounds[i + 1]
+    test_idx  = np.arange(test_start, test_end)
+    train_idx = np.concatenate([np.arange(0, test_start), np.arange(test_end, n_bins_total)])
+
+    if y[test_idx].sum() == 0:
+        print(f"  Fold {i+1}: no positive labels in test block — skipping.")
+        continue
+
+    X_train_s = gaussian_filter1d(X_raw[train_idx], sigma=SIGMA_BINS, axis=0)
+    X_test_s  = gaussian_filter1d(X_raw[test_idx],  sigma=SIGMA_BINS, axis=0)
+
+    pipe = make_pipeline()
+    pipe.fit(X_train_s, y[train_idx])
+    y_prob = pipe.predict_proba(X_test_s)[:, 1]
+    auc    = roc_auc_score(y[test_idx], y_prob)
+    aucs_blocked.append(auc)
+
+    print(f"  Fold {i+1}:  AUC = {auc:.4f}  "
+          f"(test bins {test_start:,}–{test_end:,}, n={len(test_idx):,})")
+
+mean_auc_blocked = np.mean(aucs_blocked)
+std_auc_blocked  = np.std(aucs_blocked)
+
+print(f"\n{'─'*45}")
+print(f"  Blocked CV AUC:       {mean_auc_blocked:.4f} ± {std_auc_blocked:.4f}")
+print(f"{'─'*45}")
+
+print(f"\n{'═'*45}")
+print(f"  Shuffled k-fold AUC:  {mean_auc_shuffled:.4f} ± {std_auc_shuffled:.4f}")
+print(f"  Blocked CV AUC:       {mean_auc_blocked:.4f} ± {std_auc_blocked:.4f}")
+print(f"  (difference reflects temporal autocorrelation between nearby bins)")
+print(f"{'═'*45}")
+
+# Use shuffled mean for the ROC title (it's the primary number, blocked is the conservative check)
+mean_auc = mean_auc_shuffled
+std_auc  = std_auc_shuffled
 
 ## ── 8. Save corrected arrays ────────────────────────────────────────────
 print("\nSaving corrected arrays...")

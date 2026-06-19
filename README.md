@@ -34,7 +34,8 @@ flowchart LR
 | Session | 1044385384 |
 | Units analyzed | 745 |
 | Brain regions | 21 (CA1, VISpm, VISl, POL, DG, VISrl, LP, MRN, TH, VISal, and more) |
-| AUC-ROC | 0.955 ± 0.003 (corrected CV) |
+| AUC-ROC — shuffled k-fold | 0.955 ± 0.003 |
+| AUC-ROC — blocked CV | 0.862 ± 0.020 (2/5 folds¹) |
 | Chance level (AUC) | 0.5 |
 
 ---
@@ -65,9 +66,17 @@ flowchart LR
 
 *Mean ROC curve across 5 stratified folds. AUC = 0.955 — well above the 0.5 chance baseline. Because lick events represent ~5% of time bins, AUC-ROC is reported as the primary metric; raw accuracy is misleading under this class imbalance.*
 
-### Corrected CV methodology
+### CV methodology and both estimates
 
-Inside each fold, train and test indices are sorted back into ascending time order before smoothing, so the Gaussian kernel operates on temporally adjacent bins. Smoothing, PCA, StandardScaler, and logistic regression are all applied to training data only — no test-set information influences the learned basis.
+Two cross-validation strategies are reported:
+
+**Shuffled k-fold (AUC = 0.955 ± 0.003):** StratifiedKFold with shuffle=True randomly scatters 50 ms bins across folds. At 20 Hz, neighboring bins are highly autocorrelated, so a test bin can be near-duplicated by a training bin milliseconds away — this slightly inflates AUC relative to true out-of-distribution generalization.
+
+**Blocked CV (AUC = 0.862 ± 0.020, 2/5 folds):** The session is split into five equal contiguous chunks; each chunk is held out in turn. This gives genuinely independent train/test windows and a more conservative estimate. Only 2 of 5 folds contained lick events — licking in this session is concentrated in the first ~40% of the recording, so the three late-session folds are uninformative for this metric. The ~9-point gap between estimates reflects real temporal autocorrelation in the spike rates, not a pipeline error.
+
+Inside each fold (both strategies), train and test indices are sorted back into ascending time order before Gaussian smoothing, so the kernel operates on temporally adjacent bins. PCA, StandardScaler, and LogisticRegression are all fit on training data only.
+
+¹ Three of five session blocks contain no lick events; AUC is computed on the two lick-containing blocks only.
 
 ### Population dynamics (PCA manifold)
 

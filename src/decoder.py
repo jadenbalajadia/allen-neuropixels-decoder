@@ -80,6 +80,61 @@ def cross_validate(X_raw, y, sigma_bins=2, n_components=20, n_splits=5, random_s
     return aucs
 
 
+def cross_validate_blocked(X_raw, y, sigma_bins=2, n_components=20, n_splits=5, random_state=42):
+    """
+    Contiguous-block cross-validation on raw spike rates.
+
+    Same leakage-safe fold logic as cross_validate (sort→smooth→PCA+scaler+clf
+    inside each fold via _fold_smooth_and_fit), but folds are sequential time
+    chunks rather than randomly scattered bins.
+
+    Why this matters: StratifiedKFold(shuffle=True) scatters individual 50 ms
+    bins randomly, so a test bin can be flanked in time by training bins just
+    milliseconds away — temporal autocorrelation between them inflates AUC
+    slightly.  Blocked CV assigns each contiguous session chunk to exactly one
+    fold, giving genuinely independent train/test windows and a more
+    conservative estimate of out-of-distribution generalization.
+
+    Parameters
+    ----------
+    X_raw        : np.ndarray (n_bins, n_units)  Raw (unsmoothed) spike rates.
+    y            : np.ndarray (n_bins,)           Binary lick labels.
+    sigma_bins   : float  Gaussian smoothing sigma in bins.
+    n_components : int    PCA components to retain.
+    n_splits     : int    Number of contiguous folds.
+    random_state : int    Unused (blocked CV is deterministic); kept for
+                          API symmetry with cross_validate.
+
+    Returns
+    -------
+    aucs : np.ndarray  AUC-ROC per fold.
+    """
+    n_bins      = len(y)
+    fold_bounds = np.linspace(0, n_bins, n_splits + 1, dtype=int)
+
+    aucs = []
+    for i in range(n_splits):
+        test_start, test_end = fold_bounds[i], fold_bounds[i + 1]
+        test_idx  = np.arange(test_start, test_end)
+        train_idx = np.concatenate([
+            np.arange(0, test_start),
+            np.arange(test_end, n_bins),
+        ])
+
+        if y[test_idx].sum() == 0:
+            print(f"  Fold {i+1}: no positive labels in test block — skipping.")
+            continue
+
+        auc, _, _ = _fold_smooth_and_fit(X_raw, y, train_idx, test_idx, sigma_bins, n_components)
+        aucs.append(auc)
+        print(f"  Fold {i+1}:  AUC = {auc:.4f}  "
+              f"(test bins {test_start:,}–{test_end:,}, n={len(test_idx):,})")
+
+    aucs = np.array(aucs)
+    print(f"Blocked CV AUC: {aucs.mean():.3f} ± {aucs.std():.3f}  (chance = 0.5)")
+    return aucs
+
+
 def plot_roc(X_raw, y, sigma_bins=2, n_components=20, n_splits=5, random_state=42):
     """
     Plot per-fold ROC curves and return the mean AUC.
