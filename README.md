@@ -34,8 +34,10 @@ flowchart LR
 | Session | 1044385384 |
 | Units analyzed | 745 |
 | Brain regions | 21 (CA1, VISpm, VISl, POL, DG, VISrl, LP, MRN, TH, VISal, and more) |
-| AUC-ROC — shuffled k-fold | 0.955 ± 0.003 |
-| AUC-ROC — blocked CV | 0.862 ± 0.020 (2/5 folds¹) |
+| AUC-ROC — shuffled k-fold | 0.955 ± 0.003 (5 folds) |
+| AUC-ROC — blocked CV, fold 1 (0–32 min) | 0.843 |
+| AUC-ROC — blocked CV, fold 2 (32–65 min) | 0.882 |
+| AUC-ROC — blocked CV, folds 3–5 (65–162 min) | — (no lick events) |
 | Chance level (AUC) | 0.5 |
 
 ---
@@ -72,11 +74,29 @@ Two cross-validation strategies are reported:
 
 **Shuffled k-fold (AUC = 0.955 ± 0.003):** StratifiedKFold with shuffle=True randomly scatters 50 ms bins across folds. At 20 Hz, neighboring bins are highly autocorrelated, so a test bin can be near-duplicated by a training bin milliseconds away — this slightly inflates AUC relative to true out-of-distribution generalization.
 
-**Blocked CV (AUC = 0.862 ± 0.020, 2/5 folds):** The session is split into five equal contiguous chunks; each chunk is held out in turn. This gives genuinely independent train/test windows and a more conservative estimate. Only 2 of 5 folds contained lick events — licking in this session is concentrated in the first ~40% of the recording, so the three late-session folds are uninformative for this metric. The ~9-point gap between estimates reflects real temporal autocorrelation in the spike rates, not a pipeline error.
+**Blocked CV (2/5 folds scored — not averaged):** The session is split into five equal contiguous chunks (~32.8 min each); each chunk is held out in turn. Only the first two folds contain lick events, so only those are scored:
+
+| Fold | Window | Licks | AUC |
+|---|---|---|---|
+| 1 | 0–32.5 min | 2,353 (6.0%) | **0.843** |
+| 2 | 32.5–65.0 min | 687 (1.8%) | **0.882** |
+| 3–5 | 65–162 min | 0 | — |
+
+These two AUCs are not averaged into a single number — a 2-fold result is not directly comparable to the 5-fold shuffled estimate and shouldn't be presented as if it were. The ~7–11 point gap relative to shuffled CV reflects real temporal autocorrelation between adjacent 50 ms bins; a test bin can be near-duplicated by a training bin milliseconds away under random shuffling.
 
 Inside each fold (both strategies), train and test indices are sorted back into ascending time order before Gaussian smoothing, so the kernel operates on temporally adjacent bins. PCA, StandardScaler, and LogisticRegression are all fit on training data only.
 
-¹ Three of five session blocks contain no lick events; AUC is computed on the two lick-containing blocks only.
+### Session behavior: lick concentration
+
+All 3,040 lick events occur within the first 60 minutes of a 162-minute recording; the remaining 102 minutes contain zero licks. This is a property of the animal's behavior during the session, not an artifact of any analysis choice.
+
+The figure below shows lick rate in 1-minute bins. Activity peaks sharply around minute 17 (~120 licks/min), then declines steadily and noisily through minute 40, dips low around minute 47–50, shows a brief secondary burst near minute 52 (~64 licks/min), then falls to near-zero by minute 60.
+
+![Lick rate over time](figures/lick_rate_over_time.png)
+
+*Lick rate per minute across the 162-minute session. Activity peaks sharply near minute 17 (~120 licks/min), declines steadily through minute 40, dips low around minute 47–50, shows a brief secondary burst near minute 52, then falls to near-zero by minute 60 — 102 minutes of complete silence follow.*
+
+The most likely explanations are satiation (the animal consumed enough reward to disengage), fatigue, or a behavioral state transition out of active task engagement. Neural activity continues throughout the session — only the lick-driven labeling cuts off at minute 60. Analyses that assume uniform lick rates (e.g., naive blocked CV) encounter empty test folds in the silent period; this is acknowledged by reporting per-fold AUCs rather than averaging across all five folds.
 
 ### Population dynamics (PCA manifold)
 
