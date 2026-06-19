@@ -283,7 +283,7 @@ for fold, (train_idx, test_idx) in enumerate(kf.split(X_raw, y)):
     y_prob = pipe.predict_proba(X_test_s)[:, 1]
     auc    = roc_auc_score(y[test_idx], y_prob)
     RocCurveDisplay.from_predictions(
-        y[test_idx], y_prob, ax=ax, alpha=0.45, name=f"fold {fold+1} (AUC={auc:.2f})"
+        y[test_idx], y_prob, ax=ax, alpha=0.45, name=f"fold {fold+1}"
     )
 
 ax.set_title(

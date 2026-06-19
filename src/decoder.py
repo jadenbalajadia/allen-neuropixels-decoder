@@ -162,7 +162,7 @@ def plot_roc(X_raw, y, sigma_bins=2, n_components=20, n_splits=5, random_state=4
         )
         aucs.append(auc)
         RocCurveDisplay.from_predictions(
-            y_test, proba, ax=ax, alpha=0.4, name=f"fold {fold+1} AUC={auc:.2f}"
+            y_test, proba, ax=ax, alpha=0.4, name=f"fold {fold+1}"
         )
     ax.plot([0, 1], [0, 1], "k--", label="chance")
     ax.set_title(f"ROC — mean AUC = {np.mean(aucs):.3f} ± {np.std(aucs):.3f}")
