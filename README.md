@@ -34,7 +34,7 @@ flowchart LR
 | Session | 1044385384 |
 | Units analyzed | 745 |
 | Brain regions | 21 (CA1, VISpm, VISl, POL, DG, VISrl, LP, MRN, TH, VISal, and more) |
-| AUC-ROC | 0.921 |
+| AUC-ROC | 0.955 ± 0.003 (corrected CV) |
 | Chance level (AUC) | 0.5 |
 
 ---
@@ -63,13 +63,11 @@ flowchart LR
 
 ![ROC Curve](figures/roc_curve.png)
 
-*Mean ROC curve across 5 stratified folds. AUC = 0.921 — well above the 0.5 chance baseline. Because lick events represent ~5% of time bins, AUC-ROC is reported as the primary metric; raw accuracy is misleading under this class imbalance.*
+*Mean ROC curve across 5 stratified folds. AUC = 0.955 — well above the 0.5 chance baseline. Because lick events represent ~5% of time bins, AUC-ROC is reported as the primary metric; raw accuracy is misleading under this class imbalance.*
 
-### Corrected CV (leakage fix)
+### Corrected CV methodology
 
-![ROC Curve — Corrected](figures/roc_corrected.png)
-
-Cross-validated lick decoding AUC: 0.955 ± 0.003 (5-fold, logistic regression on PCA-reduced spike rates, 1,153 QC-passed units). Smoothing and dimensionality reduction are fit within each training fold only, avoiding the leakage present in an earlier version of this pipeline.
+Inside each fold, train and test indices are sorted back into ascending time order before smoothing, so the Gaussian kernel operates on temporally adjacent bins. Smoothing, PCA, StandardScaler, and logistic regression are all applied to training data only — no test-set information influences the learned basis.
 
 ### Population dynamics (PCA manifold)
 
@@ -138,10 +136,9 @@ Pre-extracted arrays are available in the shared [Google Drive folder](https://d
 
 | File | Description | Shape |
 |---|---|---|
-| `session_1044385384_Z.npy` | PCA-reduced population activity | `(T, 3)` |
-| `session_1044385384_X_proc.npy` | Processed firing rate matrix | `(T, 745)` |
+| `session_1044385384_X_raw.npy` | Raw spike rate matrix (input to decoder) | `(T, n_units)` |
 | `session_1044385384_y.npy` | Lick behavior labels (0/1) | `(T,)` |
-| `session_1044385384_labels.csv` | Trial metadata | — |
+| `session_1044385384_labels_corrected.csv` | Bin timestamps + lick labels | — |
 | `session_1044385384_filtered_units_with_regions.csv` | Unit metadata + brain regions | `(745, 36)` |
 
 See `data/README.md` for full download instructions.
@@ -153,7 +150,7 @@ See `data/README.md` for full download instructions.
 | Notebook | What it does |
 |---|---|
 | `03_pca_manifold` | PCA on 745×T population matrix; 2D/3D trajectory visualization; pre-lick trajectory overlays |
-| `04_decoding` | Logistic regression on PCA-reduced activity; k-fold cross-validation; ROC curve (AUC = 0.921) |
+| `04_decoding` | Logistic regression decoder; corrected 5-fold CV (smooth→PCA→scale inside folds); ROC curve (AUC = 0.955) |
 
 ---
 

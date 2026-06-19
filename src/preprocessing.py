@@ -30,6 +30,8 @@ def bin_spikes(spike_times, unit_ids, t_start, t_end, bin_size_ms=10):
 
     X = np.zeros((len(t), len(unit_ids)))
     for i, uid in enumerate(unit_ids):
+        if uid not in spike_times:
+            continue
         counts, _ = np.histogram(spike_times[uid], bins=bins)
         X[:, i] = counts / bin_size_s  # convert to Hz
 
@@ -58,14 +60,15 @@ def load_arrays(data_dir):
     """
     Load pre-extracted .npy arrays from data_dir.
 
-    Returns Z (PCA scores), X (firing rates), y (lick labels).
+    Returns X_raw (spike rates, n_bins × n_units), y (lick labels), labels (DataFrame).
+    Smooth X_raw with smooth_spikes() before passing to the decoder — do not use
+    a pre-smoothed or pre-PCA'd array to avoid data leakage.
     """
     from pathlib import Path
     import pandas as pd
 
     data_dir = Path(data_dir)
-    Z = np.load(data_dir / "session_1044385384_Z.npy")
-    X = np.load(data_dir / "session_1044385384_X_proc.npy")
-    y = np.load(data_dir / "session_1044385384_y.npy")
-    labels = pd.read_csv(data_dir / "session_1044385384_labels.csv")
-    return Z, X, y, labels
+    X_raw  = np.load(data_dir / "session_1044385384_X_raw.npy")
+    y      = np.load(data_dir / "session_1044385384_y.npy")
+    labels = pd.read_csv(data_dir / "session_1044385384_labels_corrected.csv")
+    return X_raw, y, labels
