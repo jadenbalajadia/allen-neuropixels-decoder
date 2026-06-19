@@ -64,9 +64,9 @@ flowchart LR
 
 ### Decoder performance (ROC curve)
 
-![ROC Curve](figures/roc_curve.png)
+![ROC Curve](figures/roc_corrected.png)
 
-*Mean ROC curve across 5 stratified folds. AUC = 0.955 — well above the 0.5 chance baseline. Because lick events represent ~5% of time bins, AUC-ROC is reported as the primary metric; raw accuracy is misleading under this class imbalance.*
+*Per-fold ROC curves across 5 stratified folds (AUC = 0.955 ± 0.003) — well above the 0.5 chance baseline. Because lick events represent ~1.6% of time bins, AUC-ROC is reported as the primary metric; raw accuracy is misleading under this class imbalance.*
 
 ### CV methodology and both estimates
 
@@ -100,7 +100,13 @@ The most likely explanations are satiation (the animal consumed enough reward to
 
 ### Population dynamics (PCA manifold)
 
-*2D projection of 1,153-neuron population activity into PC1–PC2 space, colored by lick label. Lick (y=1) and no-lick (y=0) trials occupy distinct regions of the manifold.*
+![PCA Manifold](figures/pca_manifold.png)
+
+*PC1 vs PC2 projection of population activity across all 194,879 time bins, colored by lick label. Lick events (orange, n=3,040) form a distinct cluster in the upper-left of PC space, well-separated from the no-lick cloud (blue). Background contours show the no-lick density distribution. PC1 captures 12.3% of variance; PC2 captures 7.3%.*
+
+**Unit filtering note:** PCA fit on Gaussian-smoothed spike rates (σ=100 ms) across all 1,153 QC-passed units (quality = "good", SNR > 1, ISI violations < 0.5 — the same set used for decoding). This is a global PCA for visualization only; the decoder fits PCA inside each CV fold on training data only to avoid leakage.
+
+**Interactive 3D version:** A standalone interactive HTML file (`figures/pca_manifold_interactive.html`) shows PC1/PC2/PC3 as a rotatable 3D scatter with hover tooltips showing bin index and lick status. Download and open locally in a browser — GitHub READMEs cannot render embedded JavaScript, so this file does not display inline on the repo page.
 
 ### Pre-lick trajectories
 
