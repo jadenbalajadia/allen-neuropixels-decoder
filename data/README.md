@@ -11,11 +11,10 @@ Place downloaded files in this `data/` directory before running notebooks locall
 
 | File | Description |
 |---|---|
-| `session_1044385384_Z.npy` | PCA-reduced population activity (T × 3) |
-| `session_1044385384_X_proc.npy` | Processed firing rate matrix (T × 745) |
+| `session_1044385384_X_raw.npy` | Raw spike rate matrix, input to decoder (T × 1,153) |
 | `session_1044385384_y.npy` | Lick behavior labels (T,) |
-| `session_1044385384_labels.csv` | Trial metadata |
-| `session_1044385384_filtered_units_with_regions.csv` | Unit metadata + brain regions (745 × 36) |
+| `session_1044385384_labels_corrected.csv` | Bin timestamps + lick labels |
+| `session_1044385384_filtered_units_with_regions.csv` | Unit metadata + brain regions (1,153 × 36) |
 
 ## Re-extracting from scratch
 

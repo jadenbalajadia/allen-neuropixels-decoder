@@ -1,6 +1,6 @@
 # Allen Neuropixels Lick Decoder
 
-Decoding lick behavior from multi-region population spike trains recorded with Neuropixels probes in the Allen Brain Observatory. Extracts single-unit activity from 745 neurons across 21 brain areas, constructs a low-dimensional PCA manifold of population dynamics, and visualizes pre-lick neural trajectories in PC-space.
+Decoding lick behavior from multi-region population spike trains recorded with Neuropixels probes in the Allen Brain Observatory. Extracts single-unit activity from 1,153 neurons across 21 brain areas, constructs a low-dimensional PCA manifold of population dynamics, and visualizes pre-lick neural trajectories in PC-space.
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jadenbalajadia/allen-neuropixels-decoder/blob/main/notebooks/04_decoding.ipynb)
 ![Python](https://img.shields.io/badge/python-3.9+-blue)
@@ -12,9 +12,9 @@ Decoding lick behavior from multi-region population spike trains recorded with N
 
 ```mermaid
 flowchart LR
-    A["AllenSDK\nSession 1044385384"] --> B["Unit Filtering\n745 units · 21 regions"]
+    A["AllenSDK\nSession 1044385384"] --> B["Unit Filtering\n1,153 units · 21 regions"]
     B --> C["Bin & Smooth\n10 ms bins · σ=25 ms"]
-    C --> D["Population Matrix\n745 neurons × T bins"]
+    C --> D["Population Matrix\n1,153 neurons × T bins"]
     D --> E["PCA Manifold\nTop 3 PCs"]
     E --> F["Trajectory Analysis\nPre-lick dynamics"]
     F --> G["Decoder\nlick vs. no-lick"]
@@ -32,8 +32,8 @@ flowchart LR
 | Metric | Value |
 |---|---|
 | Session | 1044385384 |
-| Units analyzed | 745 |
-| Brain regions | 21 (CA1, VISpm, VISl, POL, DG, VISrl, LP, MRN, TH, VISal, and more) |
+| Units analyzed | 1,153 |
+| Brain regions | 21 (CA1, VISl, POL, VISpm, VISrl, MRN, DG, TH, LP, VISal, and more) |
 | AUC-ROC — shuffled k-fold | 0.955 ± 0.003 (5 folds) |
 | AUC-ROC — blocked CV, fold 1 (0–32 min) | 0.843 |
 | AUC-ROC — blocked CV, fold 2 (32–65 min) | 0.882 |
@@ -46,17 +46,17 @@ flowchart LR
 
 | Region | Units | Description |
 |---|---|---|
-| CA1 | 151 | Hippocampus — spatial/memory |
-| VISpm | 91 | Posteromedial visual cortex |
-| VISl | 82 | Lateral visual cortex |
-| POL | 63 | Posterior occipital area |
-| DG | 53 | Dentate gyrus |
-| VISrl | 47 | Rostrolateral visual cortex |
-| LP | 37 | Lateral posterior thalamic nucleus |
-| MRN | 30 | Midbrain reticular nucleus |
-| TH | 28 | Thalamus |
-| VISal | 28 | Anterolateral visual cortex |
-| *(+ 11 more)* | 135 | PoT, SGN, CA3, VISp, POST, SCig, MB, LGv, ZI, MGd, MGm |
+| CA1 | 226 | Hippocampus — spatial/memory |
+| VISl | 126 | Lateral visual cortex |
+| POL | 114 | Posterior occipital area |
+| VISpm | 113 | Posteromedial visual cortex |
+| VISrl | 84 | Rostrolateral visual cortex |
+| MRN | 71 | Midbrain reticular nucleus |
+| DG | 63 | Dentate gyrus |
+| TH | 61 | Thalamus |
+| LP | 60 | Lateral posterior thalamic nucleus |
+| VISal | 56 | Anterolateral visual cortex |
+| *(+ 11 more)* | 179 | SGN, CA3, PoT, VISp, ZI, MB, LGv, MGd, POST, SCig, MGm |
 
 ---
 
@@ -100,7 +100,7 @@ The most likely explanations are satiation (the animal consumed enough reward to
 
 ### Population dynamics (PCA manifold)
 
-*2D projection of 745-neuron population activity into PC1–PC2 space, colored by lick label. Lick (y=1) and no-lick (y=0) trials occupy distinct regions of the manifold.*
+*2D projection of 1,153-neuron population activity into PC1–PC2 space, colored by lick label. Lick (y=1) and no-lick (y=0) trials occupy distinct regions of the manifold.*
 
 ### Pre-lick trajectories
 
@@ -168,7 +168,7 @@ Pre-extracted arrays are available in the shared [Google Drive folder](https://d
 | `session_1044385384_X_raw.npy` | Raw spike rate matrix (input to decoder) | `(T, n_units)` |
 | `session_1044385384_y.npy` | Lick behavior labels (0/1) | `(T,)` |
 | `session_1044385384_labels_corrected.csv` | Bin timestamps + lick labels | — |
-| `session_1044385384_filtered_units_with_regions.csv` | Unit metadata + brain regions | `(745, 36)` |
+| `session_1044385384_filtered_units_with_regions.csv` | Unit metadata + brain regions | `(1153, 36)` |
 
 See `data/README.md` for full download instructions.
 
@@ -178,16 +178,16 @@ See `data/README.md` for full download instructions.
 
 | Notebook | What it does |
 |---|---|
-| `03_pca_manifold` | PCA on 745×T population matrix; 2D/3D trajectory visualization; pre-lick trajectory overlays |
+| `03_pca_manifold` | PCA on 1,153×T population matrix; 2D/3D trajectory visualization; pre-lick trajectory overlays |
 | `04_decoding` | Logistic regression decoder; corrected 5-fold CV (smooth→PCA→scale inside folds); ROC curve (AUC = 0.955) |
 
 ---
 
 ## Methods
 
-**Unit selection.** Single units were loaded from Allen Brain Observatory Neuropixels session `1044385384` using the AllenSDK. 745 units passing quality thresholds (ISI violations, isolation distance, SNR) were retained, spanning 21 brain areas including CA1, visual cortex (VISpm, VISl, VISrl, VISal), hippocampal subfields (DG, CA3), and thalamic nuclei (LP, TH, MRN).
+**Unit selection.** Single units were loaded from Allen Brain Observatory Neuropixels session `1044385384` using the AllenSDK. 1,153 units passing quality thresholds (quality = "good", SNR > 1, ISI violations < 0.5) were retained out of 2,179 total, spanning 21 brain areas including CA1, visual cortex (VISl, VISpm, VISrl, VISal, POL, VISp), hippocampal subfields (DG, CA3), and thalamic/midbrain nuclei (LP, TH, MRN).
 
-**Spike extraction.** Spike trains were binned into 10 ms windows and smoothed with a Gaussian kernel (σ = 25 ms), producing a continuous (T × 745) firing rate matrix.
+**Spike extraction.** Spike trains were binned into 10 ms windows and smoothed with a Gaussian kernel (σ = 25 ms), producing a continuous (T × 1,153) firing rate matrix.
 
 **Dimensionality reduction.** PCA was applied to the population firing rate matrix. The top 3 principal components were retained for visualization. Pre-lick trajectories were extracted by taking 40-bin (400 ms) windows immediately preceding each lick event.
 
